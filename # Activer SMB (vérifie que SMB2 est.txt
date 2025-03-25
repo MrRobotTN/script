@@ -1,38 +1,32 @@
-# 1. Start and configure WMI (Windows Management Instrumentation) service
-Write-Host "Starting WMI service..."
-Start-Service -Name winmgmt
-Set-Service -Name winmgmt -StartupType Automatic
-Write-Host "WMI service started and set to automatic."
-
-# 2. Enable SMBv2/SMBv3 and start SMB service
-Write-Host "Enabling SMBv2/SMBv3..."
+# ================== Activer SMB (Port 445) ==================
+Write-Host "[+] Activation de SMB..."
 Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
+Start-Process cmd -ArgumentList "/c sc config LanmanServer start= auto" -NoNewWindow -Wait
+Start-Process cmd -ArgumentList "/c net start LanmanServer" -NoNewWindow -Wait
 
-Write-Host "Starting SMB service..."
-Start-Service -Name LanmanServer
-Set-Service -Name LanmanServer -StartupType Automatic
-Write-Host "SMB service started and set to automatic."
+# ================== Activer WMI (Ports 135 + 49152-65535) ==================
+Write-Host "[+] Activation de WMI..."
+Start-Process cmd -ArgumentList "/c sc config winmgmt start= auto" -NoNewWindow -Wait
+Start-Process cmd -ArgumentList "/c net start winmgmt" -NoNewWindow -Wait
 
-# 3. Enable necessary firewall rules for WMI and SMB
-Write-Host "Enabling required firewall rules..."
-Enable-NetFirewallRule -Name "SMB-In-TCP"             # Allow SMB (TCP port 445)
-Enable-NetFirewallRule -Name "Windows Management Instrumentation (WMI)"  # Allow WMI
-Enable-NetFirewallRule -Name "RPC-EPMAP"              # Allow RPC for WMI remote connections
+# ================== Activer WinRM (Ports 5985, 5986) ==================
+Write-Host "[+] Activation de WinRM..."
+winrm quickconfig -q
+Set-Service WinRM -StartupType Automatic
+Restart-Service WinRM
 
-# 4. Verify that the services are running
-Write-Host "Verifying services status..."
+# ================== Ouvrir les ports dans le Pare-feu ==================
+Write-Host "[+] Configuration du pare-feu..."
+# SMB
+New-NetFirewallRule -DisplayName "Allow SMB" -Direction Inbound -Protocol TCP -LocalPort 445 -Action Allow
 
-# Verify WMI service
-$wmiService = Get-Service -Name winmgmt
-Write-Host "WMI Service Status: $($wmiService.Status)"
+# WMI
+New-NetFirewallRule -DisplayName "Allow WMI" -Direction Inbound -Protocol TCP -LocalPort 135 -Action Allow
+New-NetFirewallRule -DisplayName "Allow WMI Dynamic RPC" -Direction Inbound -Protocol TCP -LocalPort 49152-65535 -Action Allow
 
-# Verify SMB service
-$smbService = Get-Service -Name LanmanServer
-Write-Host "SMB Service Status: $($smbService.Status)"
+# WinRM
+New-NetFirewallRule -DisplayName "Allow WinRM" -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow
+New-NetFirewallRule -DisplayName "Allow WinRM Secure" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow
 
-# Verify Firewall rules
-$firewallRules = Get-NetFirewallRule | Where-Object { $_.DisplayName -like "*SMB*" -or $_.DisplayName -like "*WMI*" }
-Write-Host "Enabled Firewall Rules:"
-$firewallRules | ForEach-Object { Write-Host $_.DisplayName }
+Write-Host "[✔] Configuration terminée ! SMB, WMI et WinRM sont activés."
 
-Write-Host "WMI and SMB setup complete."
