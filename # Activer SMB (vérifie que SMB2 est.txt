@@ -1,15 +1,38 @@
-# Activate SMB2
+# 1. Start and configure WMI (Windows Management Instrumentation) service
+Write-Host "Starting WMI service..."
+Start-Service -Name winmgmt
+Set-Service -Name winmgmt -StartupType Automatic
+Write-Host "WMI service started and set to automatic."
+
+# 2. Enable SMBv2/SMBv3 and start SMB service
+Write-Host "Enabling SMBv2/SMBv3..."
 Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
-Write-Host "SMB2 is activated."
 
-# Enable WinRM
-Enable-PSRemoting -Force
-Write-Host "WinRM is activated."
+Write-Host "Starting SMB service..."
+Start-Service -Name LanmanServer
+Set-Service -Name LanmanServer -StartupType Automatic
+Write-Host "SMB service started and set to automatic."
 
-# Start the WinRM service if it's stopped
-Start-Service WinRM
-Write-Host "WinRM service started."
+# 3. Enable necessary firewall rules for WMI and SMB
+Write-Host "Enabling required firewall rules..."
+Enable-NetFirewallRule -Name "SMB-In-TCP"             # Allow SMB (TCP port 445)
+Enable-NetFirewallRule -Name "Windows Management Instrumentation (WMI)"  # Allow WMI
+Enable-NetFirewallRule -Name "RPC-EPMAP"              # Allow RPC for WMI remote connections
 
-# Check the status of SMB2 and WinRM
-Get-SmbServerConfiguration | Select-Object EnableSMB2Protocol
-Get-Service WinRM | Select-Object Status
+# 4. Verify that the services are running
+Write-Host "Verifying services status..."
+
+# Verify WMI service
+$wmiService = Get-Service -Name winmgmt
+Write-Host "WMI Service Status: $($wmiService.Status)"
+
+# Verify SMB service
+$smbService = Get-Service -Name LanmanServer
+Write-Host "SMB Service Status: $($smbService.Status)"
+
+# Verify Firewall rules
+$firewallRules = Get-NetFirewallRule | Where-Object { $_.DisplayName -like "*SMB*" -or $_.DisplayName -like "*WMI*" }
+Write-Host "Enabled Firewall Rules:"
+$firewallRules | ForEach-Object { Write-Host $_.DisplayName }
+
+Write-Host "WMI and SMB setup complete."
