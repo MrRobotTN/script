@@ -1,15 +1,15 @@
-# Activer SMB (vérifie que SMB2 est activé)
+# Activate SMB2
 Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
-Write-Host "SMB2 est activé."
+Write-Host "SMB2 is activated."
 
-# Activer WinRM
+# Enable WinRM
 Enable-PSRemoting -Force
-Write-Host "WinRM est activé."
+Write-Host "WinRM is activated."
 
-# Vérifier que SMB fonctionne
-Test-NetConnection -ComputerName localhost -Port 445
-Write-Host "Test SMB effectué."
+# Start the WinRM service if it's stopped
+Start-Service WinRM
+Write-Host "WinRM service started."
 
-# Vérifier que WinRM fonctionne
-Test-WSMan -ComputerName localhost
-Write-Host "Test WinRM effectué."
+# Check the status of SMB2 and WinRM
+Get-SmbServerConfiguration | Select-Object EnableSMB2Protocol
+Get-Service WinRM | Select-Object Status
