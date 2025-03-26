@@ -1,8 +1,13 @@
-# ================== Activer SMB (Port 445) ==================
+# ================== Activer SMB (Port 445) ================== 
 Write-Host "[+] Activation de SMB..."
 Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
 Start-Process cmd -ArgumentList "/c sc config LanmanServer start= auto" -NoNewWindow -Wait
 Start-Process cmd -ArgumentList "/c net start LanmanServer" -NoNewWindow -Wait
+
+# ================== Activer Remote Registry ==================
+Write-Host "[+] Activation du service Remote Registry..."
+Start-Process cmd -ArgumentList "/c sc config RemoteRegistry start= auto" -NoNewWindow -Wait
+Start-Process cmd -ArgumentList "/c net start RemoteRegistry" -NoNewWindow -Wait
 
 # ================== Activer WMI (Ports 135 + 49152-65535) ==================
 Write-Host "[+] Activation de WMI..."
@@ -28,5 +33,8 @@ New-NetFirewallRule -DisplayName "Allow WMI Dynamic RPC" -Direction Inbound -Pro
 New-NetFirewallRule -DisplayName "Allow WinRM" -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow
 New-NetFirewallRule -DisplayName "Allow WinRM Secure" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow
 
-Write-Host "[✔] Configuration terminée ! SMB, WMI et WinRM sont activés."
+# Remote Registry
+New-NetFirewallRule -DisplayName "Allow Remote Registry" -Direction Inbound -Protocol TCP -LocalPort 139 -Action Allow
+New-NetFirewallRule -DisplayName "Allow Remote Registry" -Direction Inbound -Protocol TCP -LocalPort 445 -Action Allow
 
+Write-Host "[✔] Configuration terminée ! SMB, Remote Registry, WMI et WinRM sont activés."
