@@ -1,0 +1,41 @@
+# Restore Initial Configuration from File (C:\initial_config.txt)
+$initialConfigPath = "C:\initial_config.txt"
+
+# Read the initial configuration from file
+$initialConfig = Get-Content -Path $initialConfigPath
+Write-Host "Restoring configuration from: $initialConfigPath"
+Write-Host $initialConfig
+
+# Restore WinRM Status
+$winrmStatus = $initialConfig | Select-String -Pattern "WinRM Status:" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
+if ($winrmStatus -eq "Running") {
+    Set-Service -Name WinRM -Status Running
+} else {
+    Set-Service -Name WinRM -Status Stopped
+}
+
+# Restore WMI Status
+$wmiStatus = $initialConfig | Select-String -Pattern "WMI Status:" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
+if ($wmiStatus -eq "Running") {
+    Set-Service -Name winmgmt -Status Running
+} else {
+    Set-Service -Name winmgmt -Status Stopped
+}
+
+# Restore SMB Status
+$smbStatus = $initialConfig | Select-String -Pattern "SMB Status:" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
+if ($smbStatus -eq "Enabled") {
+    Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
+} else {
+    Set-SmbServerConfiguration -EnableSMB2Protocol $false -Force
+}
+
+# Restore Remote Registry Status
+$remoteRegistryStatus = $initialConfig | Select-String -Pattern "Remote Registry Status:" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
+if ($remoteRegistryStatus -eq "Running") {
+    Set-Service -Name RemoteRegistry -Status Running
+} else {
+    Set-Service -Name RemoteRegistry -Status Stopped
+}
+
+Write-Host "[✔] Initial configuration restored: SMB, WinRM, WMI, and Remote Registry."

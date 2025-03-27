@@ -1,0 +1,24 @@
+# Save Initial Configuration to File (C:\initial_config.txt)
+
+$initialConfig = "Initial Configuration - " + (Get-Date).ToString()
+
+# WinRM Status
+$winrmStatus = Get-Service -Name WinRM | Select-Object -Property Status, StartType
+
+# WMI Status
+$wmiStatus = Get-Service -Name winmgmt | Select-Object -Property Status, StartType
+
+# SMB Status
+$smbStatus = Get-SmbServerConfiguration | Select-Object EnableSMB1Protocol, EnableSMB2Protocol
+
+# Remote Registry Status
+$remoteRegistryStatus = Get-Service -Name RemoteRegistry | Select-Object -Property Status, StartType
+
+# Save to a file
+$savePath = "C:\initial_config.txt"
+Add-Content -Path $savePath -Value "$initialConfig"
+Add-Content -Path $savePath -Value "`nWinRM Status: $($winrmStatus.Status) | Start Type: $($winrmStatus.StartType)"
+Add-Content -Path $savePath -Value "`nWMI Status: $($wmiStatus.Status) | Start Type: $($wmiStatus.StartType)"
+Add-Content -Path $savePath -Value "`nSMB Status: $($smbStatus.EnableSMB1Protocol), $($smbStatus.EnableSMB2Protocol)"
+Add-Content -Path $savePath -Value "`nRemote Registry Status: $($remoteRegistryStatus.Status) | Start Type: $($remoteRegistryStatus.StartType)"
+Write-Host "Initial configuration saved to $savePath"

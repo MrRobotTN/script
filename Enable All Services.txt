@@ -1,0 +1,23 @@
+# Enable SMB (Port 445)
+Write-Host "[+] Enabling SMB..."
+Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
+Start-Service -Name LanmanServer
+Set-Service -Name LanmanServer -StartupType Automatic
+
+# Enable WinRM (Ports 5985, 5986)
+Write-Host "[+] Enabling WinRM..."
+winrm quickconfig -q
+Set-Service -Name WinRM -StartupType Automatic
+Start-Service -Name WinRM
+
+# Enable WMI (Ports 135, 49152-65535)
+Write-Host "[+] Enabling WMI..."
+Start-Service -Name winmgmt
+Set-Service -Name winmgmt -StartupType Automatic
+
+# Enable Remote Registry (Port 139, 445)
+Write-Host "[+] Enabling Remote Registry..."
+Start-Service -Name RemoteRegistry
+Set-Service -Name RemoteRegistry -StartupType Automatic
+
+Write-Host "[✔] All services enabled: SMB, WinRM, WMI, and Remote Registry."
