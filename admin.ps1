@@ -10,3 +10,6 @@ Add-LocalGroupMember -Group "Administrators" -Member $Username
 
 # Confirmation message
 Write-Host "Local admin user '$Username' has been created and added to the Administrators group."
+
+Get-LocalUser | Select-Object Name, Enabled, PasswordRequired, PasswordLastSet
+
